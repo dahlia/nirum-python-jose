@@ -1,7 +1,7 @@
 import io
 import json
 import logging
-from typing import Any, Mapping, Sequence, Tuple, Union
+from typing import Any, Mapping, Optional, Tuple, Union
 import urllib.request
 
 from jose.jws import sign
@@ -15,10 +15,20 @@ class SigningHttpTransport(Transport):
 
     logger = logging.getLogger(f'{__name__}.SigningHttpTransport')
 
-    def __init__(self, url: str, secret: str, algorithm: str) -> None:
+    def __init__(self, url: str, secret: str, algorithm: str,
+                 opener: Optional[urllib.request.OpenerDirector]=None) -> None:
         self.url = url
         self.secret = secret
         self.algorithm = algorithm
+        if opener is None:
+            if urllib.request._opener is None:  # type: ignore
+                try:
+                    urllib.request.urlopen('')
+                except (ValueError, TypeError):
+                    pass
+            opener = urllib.request._opener  # type: ignore
+        assert isinstance(opener, urllib.request.OpenerDirector)
+        self.opener = opener
 
     def call(
         self,
@@ -39,7 +49,7 @@ class SigningHttpTransport(Transport):
         )
         request = urllib.request.Request(
             self.url,
-            data=signed_payload,
+            data=signed_payload.encode('ascii'),
             headers={
                 'Accept': 'application/json',
                 'Content-Type': 'application/jose',
@@ -50,7 +60,7 @@ class SigningHttpTransport(Transport):
             method_name, request.get_method(), request.full_url,
             request.headers, request.data
         )
-        response = urllib.request.urlopen(request)
+        response = self.opener.open(request)
         try:
             content = json.load(
                 io.TextIOWrapper(response, 'utf-8')  # type: ignore
@@ -58,5 +68,6 @@ class SigningHttpTransport(Transport):
         except ValueError:
             response.seek(0)
             raise UnexpectedNirumResponseError(response.read().decode())
-        status = response.status  # type: ignore
+        status = getattr(response, 'code', getattr(response, 'status', None))
+        assert status is not None
         return 200 <= status < 400, content

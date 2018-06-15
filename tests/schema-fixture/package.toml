@@ -1,0 +1,5 @@
+version = "0.2.0"
+
+[targets.python]
+name = "jose-schema-fixture"
+minimum_runtime = "0.6.3"

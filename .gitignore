@@ -3,3 +3,5 @@
 .*.swp
 .cache/
 .mypy_cache/
+.pytest_cache/
+.tox/

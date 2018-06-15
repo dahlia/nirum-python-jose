@@ -3,6 +3,7 @@ import collections.abc
 import json
 import logging
 from typing import BinaryIO, MutableMapping, MutableSet, Sequence, Tuple, cast
+
 from jose.constants import ALGORITHMS
 from jose.exceptions import JWSError
 from jose.jws import verify

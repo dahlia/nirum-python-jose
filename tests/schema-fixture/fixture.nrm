@@ -1,0 +1,11 @@
+unboxed result (bool);
+
+@error
+unboxed foo-error (text);
+
+service foo-service (
+    no-return-no-error (uuid a, int32 b),
+    result yes-return-no-error (text c, date d),
+    no-return-yes-error (datetime e, bool f) throws foo-error,
+    result yes-return-yes-error (decimal g, binary h) throws foo-error,
+);
